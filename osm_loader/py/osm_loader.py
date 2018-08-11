@@ -34,7 +34,7 @@ TMP_GUID = uuid.uuid4().__str__().replace("-", "_")
 
 OP_API_URL = "https://overpass-api.de/api/interpreter"
 
-DB_CON = pg.connect(dbname="homegis", user="super_ck", password="__gis__")
+DB_CON = pg.connect(dbname="homegis", user="ck", password="...")
 
 UTM_ZONE = 33
 SRID = 32633
