@@ -272,71 +272,61 @@ def check_missing_elements():
         "way": [],
         "rel": []
     }
+    
+    //changed, TODO tests needed
+    
+    sql = '''
+        SELECT DISTINCT tbl.{id_fld} as id_fld
+            FROM {tbl} as tbl
+            LEFT JOIN (
+                SELECT DISTINCT {jnd_fld_id} as jnd_fld_id
+                FROM {jnd_tbl}
+            ) as jnd_tbl
+            ON tbl.id_fld = jnd_tbl.jnd_fld_id
+            WHERE jnd_tbl.jnd_fld_id IS NULL {where};
+        '''
 
-    sqls = (
-        (
-            "node",
-            '''
-            SELECT DISTINCT way.node_id
-            FROM osm._way_nodes as way
-            LEFT JOIN (
-                SELECT DISTINCT node_id 
-                FROM osm._nodes
-            ) as nod
-            ON way.node_id = nod.node_id
-            WHERE nod.node_id IS NULL;
-            '''
-        ),
-        (
-            "node",
-            '''
-            SELECT DISTINCT _mem.osm_id 
-            FROM osm._members as _mem
-            LEFT JOIN (
-                SELECT DISTINCT node_id 
-                FROM osm._nodes
-            ) as nod
-            ON _mem.osm_id = nod.node_id
-            WHERE _mem.osm_element = 'node' 
-                AND nod.node_id IS NULL;
-            '''
-        ),
-        (
-            "way",
-            '''
-            SELECT DISTINCT _mem.osm_id 
-            FROM osm._members as _mem
-            LEFT JOIN (
-                SELECT DISTINCT way_id 
-                FROM osm._way_nodes
-            ) as way_nod
-            ON _mem.osm_id = way_nod.way_id
-            WHERE _mem.osm_element = 'way' 
-                AND way_nod.way_id IS NULL;
-            '''
-        ),
-        (
-            "rel",
-            '''
-            SELECT DISTINCT mem.osm_id 
-            FROM osm._members as mem
-            LEFT JOIN (
-                SELECT DISTINCT osm_id 
-                FROM osm._members
-            ) as relchld
-            ON mem.osm_id = relchld.osm_id
-            WHERE mem.osm_element = 'relation' 
-                AND relchld.osm_id IS NULL;
-            '''
-        )
+    tasks = (
+        {
+            "osm_elm": "node",
+            "id_fld": "node_id",
+            "tbl": "osm._way_nodes",
+            "jnd_fld_id": "node_id",
+            "jnd_tbl": "osm._nodes",
+            "where": ""
+        },
+        {   
+            "osm_elm": "node",
+            "id_fld": "osm_id",
+            "tbl": "osm._members",
+            "jnd_fld_id": "node_id",
+            "jnd_tbl": "osm._nodes",
+            "where": "AND tbl.osm_element = 'node'"
+        },
+        {
+            "osm_elm": "way",
+            "id_fld": "osm_id",
+            "tbl": "osm._members",
+            "jnd_fld_id": "way_id",
+            "jnd_tbl": "osm._way_nodes",
+            "where": "AND tbl.osm_element = 'way'"
+        },
+        {
+            "osm_elm": "rel",
+            "id_fld": "osm_id",
+            "tbl": "osm._members",
+            "jnd_fld_id": "osm_id",
+            "jnd_tbl": "osm._members",
+            "where": "AND tbl.osm_element = 'relation'"
+        }
     )
-
-    for osm_ele, sql in sqls:
+    
+    for osm_elm, sql in sqls:
         # sum(list_of_tuples, empty_tuple) flattens list
         # -> sum([(1706121979L,), (1706122002L,), (1971432955L,)], ())
         # = (1706121979L, 1706122002L, 1971432955L)
         cursor.execute(sql)
-        missing[osm_ele].extend(sum(list(cursor),()))
+        missing[osm_elm].extend(sum(list(cursor),()))
 
     return missing
 
