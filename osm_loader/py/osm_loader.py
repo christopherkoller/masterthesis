@@ -321,12 +321,14 @@ def check_missing_elements():
         }
     )
     
-    for osm_elm, sql in sqls:
+    for task in sqls:
+        
+        cursor.execute(sql.format(**task))
+        
         # sum(list_of_tuples, empty_tuple) flattens list
         # -> sum([(1706121979L,), (1706122002L,), (1971432955L,)], ())
         # = (1706121979L, 1706122002L, 1971432955L)
-        cursor.execute(sql)
-        missing[osm_elm].extend(sum(list(cursor),()))
+        missing[task["osm_elm"]].extend(sum(list(cursor),()))
 
     return missing
 
